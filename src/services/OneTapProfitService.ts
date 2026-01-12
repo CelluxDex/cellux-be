@@ -482,10 +482,11 @@ export class OneTapProfitService {
   }
 
   /**
-   * Calculate multiplier using probability-based formula (rush.trade style)
+   * Calculate multiplier using probability-based formula
    * Higher multiplier for harder targets (far price + short time)
    * Lower multiplier for easier targets (close price + long time)
-   * @returns multiplier in basis 100 (e.g., 200 = 2.0x, 3300 = 33x)
+   * Max 20x (2000 basis) - balanced for protocol sustainability
+   * @returns multiplier in basis 100 (e.g., 200 = 2.0x, 2000 = 20x)
    */
   calculateMultiplierLocal(
     entryPrice: number,
@@ -499,21 +500,20 @@ export class OneTapProfitService {
     // Time distance in seconds (minimum 10s)
     const timeDistance = Math.max(targetTime - entryTime, 10);
 
-    // Crypto volatility: ~0.003% per second (tuned to match rush.trade)
+    // Crypto volatility: ~0.005% per second (tuned for max 20x)
     // Expected price movement = volatility × sqrt(time)
-    const volatilityPerSecond = 0.003;
+    const volatilityPerSecond = 0.005;
     const expectedMove = volatilityPerSecond * Math.sqrt(timeDistance);
 
     // Difficulty ratio: how far is target vs expected natural movement
-    // If target is 5x expected movement, it's very hard to hit
     const difficultyRatio = Math.max(priceDistPercent / expectedMove, 0.1);
 
-    // Multiplier based on difficulty (exponential)
-    // difficultyRatio 1 = ~1.3x, 5 = ~7x, 10 = ~26x, 15 = ~5v0x
-    let multiplier = 100 + Math.pow(difficultyRatio, 11/10) * 25;
+    // Multiplier based on difficulty (exponential but capped at 20x)
+    // difficultyRatio 1 = ~1.2x, 3 = ~2.5x, 5 = ~5x, 10 = ~15x, 15 = ~20x
+    let multiplier = 100 + Math.pow(difficultyRatio, 1.5) * 10;
 
-    // Clamp to valid range [100, 1000] (1.0x to 10x)
-    multiplier = Math.min(Math.max(Math.round(multiplier), 100), 1000);
+    // Clamp to valid range [100, 2000] (1.0x to 20x)
+    multiplier = Math.min(Math.max(Math.round(multiplier), 100), 2000);
 
     this.logger.debug(`Multiplier calc: priceDist=${priceDistPercent.toFixed(3)}%, time=${timeDistance}s, expectedMove=${expectedMove.toFixed(3)}%, difficulty=${difficultyRatio.toFixed(2)} => ${multiplier}`);
 
