@@ -57,7 +57,7 @@ export class LimitOrderExecutor {
     this.logger = new Logger('LimitOrderExecutor');
 
     // Initialize provider
-    const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
+    const RPC_URL = process.env.RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
     this.provider = new ethers.JsonRpcProvider(RPC_URL);
 
     // Keeper wallet (executes orders)

@@ -29,7 +29,7 @@ router.post('/authorize', async (req: Request, res: Response) => {
     });
 
     // Initialize provider and relayer wallet
-    const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
+    const RPC_URL = process.env.RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
     const provider = new ethers.JsonRpcProvider(RPC_URL);
 
     const relayerPrivateKey = process.env.RELAY_PRIVATE_KEY;
@@ -142,7 +142,7 @@ router.get('/status', async (req: Request, res: Response) => {
       });
     }
 
-    const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
+    const RPC_URL = process.env.RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
     const provider = new ethers.JsonRpcProvider(RPC_URL);
 
     const receipt = await provider.getTransactionReceipt(txHash as string);

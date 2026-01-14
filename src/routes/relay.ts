@@ -155,7 +155,7 @@ export function createRelayRoute(relayService: RelayService): Router {
           gasUsed: result.gasUsed.toString(),
           usdcCharged: result.usdcCharged.toString(),
           usdcChargedFormatted: (Number(result.usdcCharged) / 1e6).toFixed(4) + ' USDC',
-          explorerUrl: `https://sepolia.basescan.org/tx/${result.txHash}`,
+          explorerUrl: `https://sepolia.mantlescan.xyz/tx/${result.txHash}`,
           positionId: result.positionId // Position ID if extracted from event
         },
         timestamp: Date.now()
@@ -251,7 +251,7 @@ export function createRelayRoute(relayService: RelayService): Router {
         data: {
           txHash: result.txHash,
           orderId: orderId,
-          explorerUrl: `https://sepolia.basescan.org/tx/${result.txHash}`
+          explorerUrl: `https://sepolia.mantlescan.xyz/tx/${result.txHash}`
         },
         timestamp: Date.now()
       });
@@ -301,7 +301,7 @@ export function createRelayRoute(relayService: RelayService): Router {
         data: {
           txHash: result.txHash,
           positionId: positionId,
-          explorerUrl: `https://sepolia.basescan.org/tx/${result.txHash}`
+          explorerUrl: `https://sepolia.mantlescan.xyz/tx/${result.txHash}`
         },
         timestamp: Date.now()
       });

@@ -29,7 +29,7 @@ export class RelayService {
     this.logger = new Logger('RelayService');
     
     // Initialize provider
-    const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
+    const RPC_URL = process.env.RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
     this.provider = new ethers.JsonRpcProvider(RPC_URL);
     
     // Initialize relay wallet (backend wallet that pays gas)
@@ -110,12 +110,12 @@ export class RelayService {
       return usdcCost;
     } catch (error) {
       this.logger.warn('⚠️  Paymaster unavailable, using fallback gas calculation');
-      // FALLBACK: Rough estimate for Base Sepolia
+      // FALLBACK: Rough estimate for Mantle Sepolia
       // Assume: 0.001 Gwei gas price, 1 ETH = 3000 USDC
       // Gas cost in ETH = estimatedGas * gasPrice
       // Gas cost in USDC = Gas cost in ETH * ETH price
       
-      // Base Sepolia typical gas price: ~0.001 Gwei = 1000000 wei
+      // Mantle Sepolia typical gas price: ~0.001 Gwei = 1000000 wei
       const gasPriceWei = 1000000n; // 0.001 Gwei
       const gasCostWei = estimatedGas * gasPriceWei;
       

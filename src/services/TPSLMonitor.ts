@@ -43,7 +43,7 @@ export class TPSLMonitor {
     this.logger = new Logger('TPSLMonitor');
 
     // Initialize provider
-    const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
+    const RPC_URL = process.env.RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
     this.provider = new ethers.JsonRpcProvider(RPC_URL);
 
     // Keeper wallet

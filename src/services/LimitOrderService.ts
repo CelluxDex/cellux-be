@@ -35,7 +35,7 @@ export class LimitOrderService {
   private orderTPSLMap: Map<string, { takeProfit?: bigint; stopLoss?: bigint }> = new Map();
 
   constructor() {
-    const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
+    const RPC_URL = process.env.RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
     this.provider = new ethers.JsonRpcProvider(RPC_URL);
 
     const keeperPrivateKey = process.env.RELAY_PRIVATE_KEY;

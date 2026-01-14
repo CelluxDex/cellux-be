@@ -90,7 +90,7 @@ export function createLimitOrderRoute(limitOrderService: LimitOrderService) {
 
     try {
       const result = await limitOrderService.createLimitOpenOrder(payload);
-      const explorerUrl = `https://sepolia.basescan.org/tx/${result.txHash}`;
+      const explorerUrl = `https://sepolia.mantlescan.xyz/tx/${result.txHash}`;
 
       res.json({
         success: true,

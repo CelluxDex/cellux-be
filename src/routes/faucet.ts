@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Logger } from '../utils/Logger';
 import { createWalletClient, http, parseUnits, PublicClient, createPublicClient } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { baseSepolia } from 'viem/chains';
+import { mantleTestnet } from 'viem/chains';
 
 const logger = new Logger('FaucetRoute');
 
@@ -51,7 +51,7 @@ export function createFaucetRoute(): Router {
       // Get configuration from environment
       const usdcAddress = process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x9d660c5d4BFE4b7fcC76f327b22ABF7773DD48c1';
       const faucetPrivateKey = process.env.FAUCET_PRIVATE_KEY;
-      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://sepolia.base.org';
+      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
 
       if (!faucetPrivateKey) {
         logger.error('FAUCET_PRIVATE_KEY not configured in environment');
@@ -68,13 +68,13 @@ export function createFaucetRoute(): Router {
       // Create wallet client
       const walletClient = createWalletClient({
         account,
-        chain: baseSepolia,
+        chain: mantleTestnet,
         transport: http(rpcUrl),
       });
 
       // Create public client for waiting transaction
       const publicClient = createPublicClient({
-        chain: baseSepolia,
+        chain: mantleTestnet,
         transport: http(rpcUrl),
       });
 
@@ -109,7 +109,7 @@ export function createFaucetRoute(): Router {
           recipient: address,
           status: receipt.status,
           blockNumber: receipt.blockNumber.toString(),
-          explorerUrl: `https://sepolia.basescan.org/tx/${hash}`
+          explorerUrl: `https://sepolia.mantlescan.xyz/tx/${hash}`
         },
         message: `Successfully claimed ${amount} USDC`,
         timestamp: Date.now()
@@ -156,10 +156,10 @@ export function createFaucetRoute(): Router {
       }
 
       const account = privateKeyToAccount(faucetPrivateKey as `0x${string}`);
-      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://sepolia.base.org';
+      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
 
       const publicClient = createPublicClient({
-        chain: baseSepolia,
+        chain: mantleTestnet,
         transport: http(rpcUrl),
       });
 
@@ -175,8 +175,8 @@ export function createFaucetRoute(): Router {
           faucetAddress: account.address,
           ethBalance: (Number(balance) / 1e18).toFixed(6),
           defaultAmount: '100',
-          network: 'Base Sepolia',
-          chainId: 84532
+          network: 'Mantle Sepolia',
+          chainId: mantleTestnet.id
         },
         timestamp: Date.now()
       });

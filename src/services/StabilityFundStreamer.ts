@@ -22,7 +22,7 @@ export class StabilityFundStreamer {
   private isStreaming = false;
 
   constructor() {
-    const rpcUrl = process.env.RPC_URL || 'https://sepolia.base.org';
+    const rpcUrl = process.env.RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
 
     const relayerKey = process.env.RELAY_PRIVATE_KEY;

@@ -40,7 +40,7 @@ export class OneTapProfitMonitor {
     this.oneTapService = oneTapService;
     
     // Setup relayer
-    const rpcUrl = process.env.RPC_URL || 'https://sepolia.base.org';
+    const rpcUrl = process.env.RPC_URL || 'https://rpc.sepolia.mantle.xyz/';
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     
     const relayPrivateKey = process.env.RELAY_PRIVATE_KEY;
