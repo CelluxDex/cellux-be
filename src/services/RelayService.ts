@@ -17,7 +17,8 @@ export class RelayService {
   private logger: Logger;
   private provider: ethers.JsonRpcProvider;
   private relayWallet: ethers.Wallet;
-  private paymasterContract: Contract;
+  private paymasterContract?: Contract;
+  private paymasterEnabled: boolean;
   
   // Contract addresses (from .env)
   private PAYMASTER_ADDRESS: string;
@@ -44,24 +45,34 @@ export class RelayService {
     this.MARKET_EXECUTOR_ADDRESS = process.env.MARKET_EXECUTOR_ADDRESS || '';
     this.LIMIT_EXECUTOR_ADDRESS = process.env.LIMIT_EXECUTOR_ADDRESS || '';
     this.POSITION_MANAGER_ADDRESS = process.env.POSITION_MANAGER_ADDRESS || '';
-    
-    if (!this.PAYMASTER_ADDRESS || !this.MARKET_EXECUTOR_ADDRESS || !this.LIMIT_EXECUTOR_ADDRESS || !this.POSITION_MANAGER_ADDRESS) {
+
+    this.paymasterEnabled = process.env.PAYMASTER_ENABLED === 'true';
+
+    if (!this.MARKET_EXECUTOR_ADDRESS || !this.LIMIT_EXECUTOR_ADDRESS || !this.POSITION_MANAGER_ADDRESS) {
       throw new Error('Contract addresses not configured');
     }
-    
-    // Initialize paymaster contract
-    const paymasterABI = [
-      'function validateGasPayment(address user, uint256 estimatedGas) view returns (bool)',
-      'function processGasPayment(address user, uint256 gasUsed) returns (uint256)',
-      'function userDeposits(address) view returns (uint256)',
-      'function calculateUsdcCost(uint256 gasAmount) view returns (uint256)'
-    ];
-    
-    this.paymasterContract = new Contract(
-      this.PAYMASTER_ADDRESS,
-      paymasterABI,
-      this.relayWallet
-    );
+
+    if (this.paymasterEnabled) {
+      if (!this.PAYMASTER_ADDRESS) {
+        throw new Error('USDC_PAYMASTER_ADDRESS not configured');
+      }
+
+      // Initialize paymaster contract
+      const paymasterABI = [
+        'function validateGasPayment(address user, uint256 estimatedGas) view returns (bool)',
+        'function processGasPayment(address user, uint256 gasUsed) returns (uint256)',
+        'function userDeposits(address) view returns (uint256)',
+        'function calculateUsdcCost(uint256 gasAmount) view returns (uint256)'
+      ];
+
+      this.paymasterContract = new Contract(
+        this.PAYMASTER_ADDRESS,
+        paymasterABI,
+        this.relayWallet
+      );
+    } else {
+      this.logger.warn('Paymaster disabled; skipping USDC deposit checks');
+    }
 
     // Initialize NonceManager
     NonceManager.getInstance().init(this.relayWallet).catch(err => {
@@ -76,6 +87,9 @@ export class RelayService {
    * Check if user can pay for gas via paymaster
    */
   async canUserPayGas(userAddress: string, estimatedGas: bigint): Promise<boolean> {
+    if (!this.paymasterEnabled || !this.paymasterContract) {
+      return true;
+    }
     try {
       const canPay = await this.paymasterContract.validateGasPayment(
         userAddress,
@@ -92,6 +106,9 @@ export class RelayService {
    * Get user's USDC deposit balance in paymaster
    */
   async getUserDeposit(userAddress: string): Promise<bigint> {
+    if (!this.paymasterEnabled || !this.paymasterContract) {
+      return 0n;
+    }
     try {
       const deposit = await this.paymasterContract.userDeposits(userAddress);
       return deposit;
@@ -105,6 +122,9 @@ export class RelayService {
    * Calculate USDC cost for estimated gas
   */
   async calculateGasCost(estimatedGas: bigint): Promise<bigint> {
+    if (!this.paymasterEnabled || !this.paymasterContract) {
+      return 0n;
+    }
     try {
       const usdcCost = await this.paymasterContract.calculateUsdcCost(estimatedGas);
       return usdcCost;
@@ -315,11 +335,17 @@ export class RelayService {
         this.logger.info(`   Payout (net to trader): ${payout.toString()}`);
 
         // 1) close position
+        const closeGasEstimate = await positionManager.closePosition.estimateGas(
+          BigInt(positionId),
+          BigInt(signedPrice.price)
+        );
+        const closeGasLimit = (closeGasEstimate * 120n) / 100n; // 20% buffer
+        this.logger.info(`   Close gas estimate: ${closeGasEstimate.toString()}`);
         const nonceClose = await NonceManager.getInstance().getNonce();
         const closeTx = await positionManager.closePosition(
           BigInt(positionId),
           BigInt(signedPrice.price),
-          { gasLimit: 500000n, nonce: nonceClose }
+          { gasLimit: closeGasLimit, nonce: nonceClose }
         );
         this.logger.info(`Close tx sent: ${closeTx.hash}`);
         await closeTx.wait();
@@ -335,14 +361,29 @@ export class RelayService {
 
         if (payout > bufferBalance) {
           const vaultPool = new Contract(vaultPoolAddress, VaultPoolABI.abi, this.relayWallet);
+          const coverGasEstimate = await vaultPool.coverPayout.estimateGas(
+            position.trader,
+            payout
+          );
+          const coverGasLimit = (coverGasEstimate * 120n) / 100n;
+          this.logger.info(`   coverPayout gas estimate: ${coverGasEstimate.toString()}`);
           const nonceCover = await NonceManager.getInstance().getNonce();
           const coverTx = await vaultPool.coverPayout(position.trader, payout, {
-            gasLimit: 600000n,
+            gasLimit: coverGasLimit,
             nonce: nonceCover
           });
           this.logger.info(`coverPayout via VaultPool sent: ${coverTx.hash}`);
           this.logger.warn('Buffer insufficient; paid trader directly from VaultPool. Fees not split via StabilityFund.');
         } else {
+          const settleGasEstimate = await stabilityFund.settleTrade.estimateGas(
+            position.trader,
+            position.collateral,
+            cappedPnl,
+            tradingFee,
+            this.relayWallet.address
+          );
+          const settleGasLimit = (settleGasEstimate * 120n) / 100n;
+          this.logger.info(`   settleTrade gas estimate: ${settleGasEstimate.toString()}`);
           const nonceSettle = await NonceManager.getInstance().getNonce();
           const settleTx = await stabilityFund.settleTrade(
             position.trader,
@@ -350,7 +391,7 @@ export class RelayService {
             cappedPnl,
             tradingFee,
             this.relayWallet.address,
-            { gasLimit: 600000n, nonce: nonceSettle }
+            { gasLimit: settleGasLimit, nonce: nonceSettle }
           );
           this.logger.info(`Settle tx sent: ${settleTx.hash}`);
         }
