@@ -1,10 +1,10 @@
-# Tethra DEX - Backend API
+# Cellux DEX - Backend API
 
 ![Node.js](https://img.shields.io/badge/Node.js-18+-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Express](https://img.shields.io/badge/Express-4.x-lightgrey)
 
-Comprehensive backend service for Tethra DEX providing:
+Comprehensive backend service for Cellux DEX providing:
 - 📊 **Real-time Price Feeds** (Pyth Network Oracle)
 - ✍️ **Price Signing** for on-chain verification
 - 🚀 **Relay Service** for gasless transactions
@@ -157,7 +157,7 @@ Response:
 ```json
 {
   "success": true,
-  "service": "Tethra DEX Backend",
+  "service": "Cellux DEX Backend",
   "uptime": 123.456,
   "priceService": {
     "status": "connected",
@@ -271,7 +271,7 @@ async function getPythPrices() {
                  │ Price Feeds (5s interval)
                  ▼
 ┌─────────────────────────────────────────┐
-│      Tethra DEX Backend Service         │
+│      Cellux DEX Backend Service         │
 │  ┌───────────────────────────────────┐  │
 │  │   PythPriceService                │  │
 │  │   - Fetch all assets prices       │  │
@@ -323,8 +323,8 @@ sudo apt install -y nginx
 ```bash
 # Clone repository
 cd /var/www
-sudo git clone <your-repo-url> tethra-dex
-cd tethra-dex/tethra-be
+sudo git clone <your-repo-url> cellux-dex
+cd cellux-dex/cellux-be
 
 # Install dependencies
 npm install
@@ -348,8 +348,8 @@ NODE_ENV=production
 DEBUG=false
 
 # Smart Contracts (from deployment)
-CHAIN_ID=84532
-RPC_URL=https://sepolia.base.org
+CHAIN_ID=5003
+RPC_URL=https://rpc.sepolia.mantle.xyz
 MARKET_EXECUTOR_ADDRESS=0x...
 POSITION_MANAGER_ADDRESS=0x...
 LIMIT_EXECUTOR_ADDRESS=0x...
@@ -358,7 +358,7 @@ ONE_TAP_PROFIT_ADDRESS=0x...
 VAULT_POOL_ADDRESS=0x...
 STABILITY_FUND_ADDRESS=0x...
 USDC_TOKEN_ADDRESS=0x...
-TETHRA_STAKING_ADDRESS=0x...
+CELLUX_STAKING_ADDRESS=0x...
 USDC_PAYMASTER_ADDRESS=0x...
 # ... copy the rest from deployments JSON
 
@@ -372,7 +372,7 @@ LIMIT_ORDER_KEEPER_PRIVATE_KEY=0x...
 
 ```bash
 # Start backend with PM2
-pm2 start npm --name "tethra-backend" -- start
+pm2 start npm --name "cellux-backend" -- start
 
 # Save PM2 config
 pm2 save
@@ -383,7 +383,7 @@ sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME
 
 # Check status
 pm2 status
-pm2 logs tethra-backend
+pm2 logs cellux-backend
 ```
 
 ### Step 5: Configure Nginx (Reverse Proxy)
@@ -391,7 +391,7 @@ pm2 logs tethra-backend
 Create Nginx config:
 
 ```bash
-sudo nano /etc/nginx/sites-available/tethra-backend
+sudo nano /etc/nginx/sites-available/cellux-backend
 ```
 
 Add configuration:
@@ -426,7 +426,7 @@ Enable site:
 
 ```bash
 # Create symlink
-sudo ln -s /etc/nginx/sites-available/tethra-backend /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/cellux-backend /etc/nginx/sites-enabled/
 
 # Test Nginx config
 sudo nginx -t
@@ -465,44 +465,44 @@ sudo ufw status
 
 ```bash
 # View logs
-pm2 logs tethra-backend
-pm2 logs tethra-backend --lines 100
+pm2 logs cellux-backend
+pm2 logs cellux-backend --lines 100
 
 # Restart service
-pm2 restart tethra-backend
+pm2 restart cellux-backend
 
 # Stop service
-pm2 stop tethra-backend
+pm2 stop cellux-backend
 
 # Monitor resources
 pm2 monit
 
 # Update code
-cd /var/www/tethra-dex/tethra-be
+cd /var/www/cellux-dex/cellux-be
 sudo git pull
 npm install
 npm run build
-pm2 restart tethra-backend
+pm2 restart cellux-backend
 ```
 
 ### Important Production Notes
 
 ⚠️ **Security Best Practices:**
 1. **Private Keys**: NEVER commit `.env` to Git. Store securely
-2. **Relay Wallet**: Fund with Base Sepolia ETH for gas fees
+2. **Relay Wallet**: Fund with MNT Mantle Sepolia for gas fees
 3. **Firewall**: Only expose ports 22, 80, 443
 4. **SSL**: Always use HTTPS in production
 5. **Monitoring**: Setup uptime monitoring (UptimeRobot, etc.)
 
 💰 **Wallet Funding:**
-- Relay wallet needs Base Sepolia ETH (~0.1 ETH recommended)
-- Price signer wallet doesn't need ETH (signing only)
-- Keeper wallet needs Base Sepolia ETH for order execution
+- Relay wallet needs Mantle Sepolia MNT
+- Price signer wallet doesn't need MNT (signing only)
+- Keeper wallet needs Mantle Sepolia MNT for order execution
 
 🔄 **Auto-Restart on Crash:**
 PM2 automatically restarts the service if it crashes. Check logs:
 ```bash
-pm2 logs tethra-backend --err
+pm2 logs cellux-backend --err
 ```
 
 ### Troubleshooting VPS Deployment
@@ -510,7 +510,7 @@ pm2 logs tethra-backend --err
 **Issue: Port 3001 already in use**
 ```bash
 sudo lsof -ti:3001 | xargs sudo kill -9
-pm2 restart tethra-backend
+pm2 restart cellux-backend
 ```
 
 **Issue: Nginx 502 Bad Gateway**
@@ -519,7 +519,7 @@ pm2 restart tethra-backend
 pm2 status
 
 # Check backend logs
-pm2 logs tethra-backend
+pm2 logs cellux-backend
 
 # Restart Nginx
 sudo systemctl restart nginx
@@ -528,7 +528,7 @@ sudo systemctl restart nginx
 **Issue: Out of Memory**
 ```bash
 # Increase Node.js memory limit
-pm2 start npm --name "tethra-backend" --max-memory-restart 500M -- start
+pm2 start npm --name "cellux-backend" --max-memory-restart 500M -- start
 ```
 
 **Issue: WebSocket connection fails**
@@ -540,7 +540,7 @@ pm2 start npm --name "tethra-backend" --max-memory-restart 500M -- start
 
 ### Environment Variables for Frontend
 
-Update `Tethra-Front-End/.env`:
+Update `Cellux-Front-End/.env`:
 
 ```bash
 # Development
@@ -554,10 +554,10 @@ NEXT_PUBLIC_WS_URL=wss://api.yourdomain.com
 
 ## 📝 Notes
 
-- **Pyth Oracle** menyediakan harga yang cryptographically verified
-- Price update interval: **5 detik** (lebih cepat dari TradingView free plan)
-- Confidence interval menunjukkan akurasi harga
-- Fallback ke Binance jika Pyth tidak available
+- **Pyth Oracle** offer signer price of cryptographically verified
+- Price update interval: **5 seconds**
+- Confidence interval
+- Fallback to Binance if Pyth not available
 
 ## 🔧 Troubleshooting
 
@@ -582,4 +582,4 @@ MIT
 
 ## 👥 Team
 
-Tethra DEX Development Team
+Cellux DEX Development Team

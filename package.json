@@ -1,7 +1,7 @@
 {
-  "name": "tethra-dex-backend",
+  "name": "cellux-dex-backend",
   "version": "1.0.0",
-  "description": "Tethra DEX Backend - Price Oracle Service using Pyth Network",
+  "description": "Cellux DEX Backend - Price Oracle Service using Pyth Network",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -16,7 +16,7 @@
     "oracle",
     "dex"
   ],
-  "author": "Tethra DEX Team",
+  "author": "Cellux DEX Team",
   "license": "MIT",
   "dependencies": {
     "@pythnetwork/hermes-client": "^1.0.0",
