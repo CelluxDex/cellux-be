@@ -1,10 +1,10 @@
-# Cellux DEX - Backend API
+# Cellux Trade - Backend API
 
 ![Node.js](https://img.shields.io/badge/Node.js-18+-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Express](https://img.shields.io/badge/Express-4.x-lightgrey)
 
-Comprehensive backend service for Cellux DEX providing:
+Comprehensive backend service for Cellux Trade providing:
 - 📊 **Real-time Price Feeds** (Pyth Network Oracle)
 - ✍️ **Price Signing** for on-chain verification
 - 🚀 **Relay Service** for gasless transactions
@@ -157,7 +157,7 @@ Response:
 ```json
 {
   "success": true,
-  "service": "Cellux DEX Backend",
+  "service": "Cellux Trade Backend",
   "uptime": 123.456,
   "priceService": {
     "status": "connected",
@@ -271,7 +271,7 @@ async function getPythPrices() {
                  │ Price Feeds (5s interval)
                  ▼
 ┌─────────────────────────────────────────┐
-│      Cellux DEX Backend Service         │
+│      Cellux Trade Backend Service       │
 │  ┌───────────────────────────────────┐  │
 │  │   PythPriceService                │  │
 │  │   - Fetch all assets prices       │  │
@@ -323,8 +323,8 @@ sudo apt install -y nginx
 ```bash
 # Clone repository
 cd /var/www
-sudo git clone <your-repo-url> cellux-dex
-cd cellux-dex/cellux-be
+sudo git clone <your-repo-url> celluxtrade
+cd celluxtrade/cellux-be
 
 # Install dependencies
 npm install
@@ -478,7 +478,7 @@ pm2 stop cellux-backend
 pm2 monit
 
 # Update code
-cd /var/www/cellux-dex/cellux-be
+cd /var/www/celluxtrade/cellux-be
 sudo git pull
 npm install
 npm run build
@@ -582,4 +582,4 @@ MIT
 
 ## 👥 Team
 
-Cellux DEX Development Team
+Cellux Trade Development Team
