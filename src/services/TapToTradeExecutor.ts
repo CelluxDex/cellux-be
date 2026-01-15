@@ -10,6 +10,7 @@
 
 import { ethers, Contract } from 'ethers';
 import { Logger } from '../utils/Logger';
+import { estimateGasWithBuffer } from '../utils/Gas';
 import TapToTradeExecutorABI from '../abis/TapToTradeExecutor.json';
 import { TapToTradeService } from './TapToTradeService';
 import { TapToTradeOrder, TapToTradeOrderStatus } from '../types/tapToTrade';
@@ -339,6 +340,19 @@ export class TapToTradeExecutor {
         this.logger.info('⚡ Backend validated session signature off-chain, keeper executes without on-chain verification');
         
         // Call executeTapToTradeByKeeper - no signature parameter needed!
+        const gasLimit = await estimateGasWithBuffer(
+          () => this.tapToTradeExecutor.executeTapToTradeByKeeper.estimateGas(
+            order.trader,
+            order.symbol,
+            order.isLong,
+            BigInt(order.collateral),
+            BigInt(order.leverage),
+            signedPrice
+          ),
+          800000n,
+          this.logger,
+          'TapToTradeExecutor.executeTapToTradeByKeeper'
+        );
         tx = await this.tapToTradeExecutor.executeTapToTradeByKeeper(
           order.trader,
           order.symbol,
@@ -346,7 +360,7 @@ export class TapToTradeExecutor {
           BigInt(order.collateral),
           BigInt(order.leverage),
           signedPrice,
-          { gasLimit: 800000 }
+          { gasLimit }
         );
         
         this.logger.info('✅ Keeper execution successful (fully gasless for user!)');
@@ -354,6 +368,20 @@ export class TapToTradeExecutor {
         // Traditional flow - user signature verified on-chain
         this.logger.info('📝 Order has traditional signature - using meta-transaction flow');
         
+        const gasLimit = await estimateGasWithBuffer(
+          () => this.tapToTradeExecutor.executeTapToTrade.estimateGas(
+            order.trader,
+            order.symbol,
+            order.isLong,
+            BigInt(order.collateral),
+            BigInt(order.leverage),
+            signedPrice,
+            order.signature
+          ),
+          800000n,
+          this.logger,
+          'TapToTradeExecutor.executeTapToTrade'
+        );
         tx = await this.tapToTradeExecutor.executeTapToTrade(
           order.trader,
           order.symbol,
@@ -362,7 +390,7 @@ export class TapToTradeExecutor {
           BigInt(order.leverage),
           signedPrice,
           order.signature,
-          { gasLimit: 800000 }
+          { gasLimit }
         );
       }
 

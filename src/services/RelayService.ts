@@ -8,6 +8,7 @@
 import { ethers, Contract } from 'ethers';
 import { Logger } from '../utils/Logger';
 import { NonceManager } from '../utils/NonceManager';
+import { applyGasBuffer, estimateGasWithBuffer } from '../utils/Gas';
 import MarketExecutorABI from '../abis/MarketExecutor.json';
 import PositionManagerABI from '../abis/PositionManager.json';
 import VaultPoolABI from '../abis/VaultPool.json';
@@ -189,8 +190,9 @@ export class RelayService {
         data,
         value
       });
-      
+
       this.logger.info(`⛽ Estimated gas: ${gasEstimate.toString()}`);
+      const gasLimit = applyGasBuffer(gasEstimate);
       
       // Check if user can pay
       const canPay = await this.canUserPayGas(userAddress, gasEstimate);
@@ -216,7 +218,7 @@ export class RelayService {
             to,
             data,
             value,
-            gasLimit: gasEstimate * 120n / 100n, // 20% buffer
+            gasLimit,
             nonce: nonce // Use managed nonce
           });
           
@@ -339,7 +341,7 @@ export class RelayService {
           BigInt(positionId),
           BigInt(signedPrice.price)
         );
-        const closeGasLimit = (closeGasEstimate * 120n) / 100n; // 20% buffer
+        const closeGasLimit = applyGasBuffer(closeGasEstimate);
         this.logger.info(`   Close gas estimate: ${closeGasEstimate.toString()}`);
         const nonceClose = await NonceManager.getInstance().getNonce();
         const closeTx = await positionManager.closePosition(
@@ -365,7 +367,7 @@ export class RelayService {
             position.trader,
             payout
           );
-          const coverGasLimit = (coverGasEstimate * 120n) / 100n;
+          const coverGasLimit = applyGasBuffer(coverGasEstimate);
           this.logger.info(`   coverPayout gas estimate: ${coverGasEstimate.toString()}`);
           const nonceCover = await NonceManager.getInstance().getNonce();
           const coverTx = await vaultPool.coverPayout(position.trader, payout, {
@@ -382,7 +384,7 @@ export class RelayService {
             tradingFee,
             this.relayWallet.address
           );
-          const settleGasLimit = (settleGasEstimate * 120n) / 100n;
+          const settleGasLimit = applyGasBuffer(settleGasEstimate);
           this.logger.info(`   settleTrade gas estimate: ${settleGasEstimate.toString()}`);
           const nonceSettle = await NonceManager.getInstance().getNonce();
           const settleTx = await stabilityFund.settleTrade(
@@ -455,10 +457,20 @@ export class RelayService {
         
         const nonce = await NonceManager.getInstance().getNonce();
 
+        const gasLimit = await estimateGasWithBuffer(
+          () => this.provider.estimateGas({
+            from: this.relayWallet.address,
+            to: this.LIMIT_EXECUTOR_ADDRESS,
+            data: data
+          }),
+          200000n,
+          this.logger,
+          'LimitExecutor.cancelOrderGasless'
+        );
         const tx = await this.relayWallet.sendTransaction({
           to: this.LIMIT_EXECUTOR_ADDRESS,
           data: data,
-          gasLimit: 200000n,
+          gasLimit,
           nonce: nonce
         });
         

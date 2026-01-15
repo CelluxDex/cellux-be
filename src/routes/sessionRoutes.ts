@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { ethers } from 'ethers';
 import { Logger } from '../utils/Logger';
+import { estimateGasWithBuffer } from '../utils/Gas';
 import TapToTradeExecutorABI from '../abis/TapToTradeExecutor.json';
 
 const router = Router();
@@ -86,11 +87,21 @@ router.post('/authorize', async (req: Request, res: Response) => {
     logger.info('✅ Signature verified locally');
 
     // Call authorizeSessionKey on contract (relayer pays gas!)
+    const gasLimit = await estimateGasWithBuffer(
+      () => tapToTradeExecutor.authorizeSessionKey.estimateGas(
+        sessionKeyAddress,
+        duration,
+        authSignature
+      ),
+      300000n,
+      logger,
+      'TapToTradeExecutor.authorizeSessionKey'
+    );
     const tx = await tapToTradeExecutor.authorizeSessionKey(
       sessionKeyAddress,
       duration,
       authSignature,
-      { gasLimit: 300000 } // Set generous gas limit
+      { gasLimit }
     );
 
     logger.info('📤 Authorization tx sent:', tx.hash);

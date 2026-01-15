@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import StabilityFundABI from '../abis/StabilityFund.json';
 import { Logger } from '../utils/Logger';
 import { NonceManager } from '../utils/NonceManager';
+import { estimateGasWithBuffer } from '../utils/Gas';
 
 type StreamTrigger = 'startup' | 'interval' | 'manual';
 
@@ -148,7 +149,13 @@ export class StabilityFundStreamer {
       }
 
       const nonce = await this.tryGetNonce();
-      const txOptions: any = { gasLimit: 300000n };
+      const gasLimit = await estimateGasWithBuffer(
+        () => this.stabilityFund.streamToVault.estimateGas(),
+        300000n,
+        this.logger,
+        'StabilityFund.streamToVault'
+      );
+      const txOptions: any = { gasLimit };
       if (nonce !== undefined) {
         txOptions.nonce = nonce;
       }

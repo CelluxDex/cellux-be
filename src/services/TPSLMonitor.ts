@@ -7,6 +7,7 @@
 
 import { ethers, Contract } from 'ethers';
 import { Logger } from '../utils/Logger';
+import { estimateGasWithBuffer } from '../utils/Gas';
 import { TPSLConfig } from '../types';
 import PositionManagerABI from '../abis/PositionManager.json';
 import MarketExecutorABI from '../abis/MarketExecutor.json';
@@ -290,10 +291,16 @@ export class TPSLMonitor {
       this.logger.info(`   - PnL: ${pnl.toString()}`);
 
       // Close via PositionManager (manual settlement)
+      const closeGasLimit = await estimateGasWithBuffer(
+        () => this.positionManager.closePosition.estimateGas(position.id, currentPrice),
+        500000n,
+        this.logger,
+        'PositionManager.closePosition'
+      );
       const closeTx = await this.positionManager.closePosition(
         position.id,
         currentPrice,
-        { gasLimit: 500000 }
+        { gasLimit: closeGasLimit }
       );
 
       this.logger.info(`Close tx sent: ${closeTx.hash}`);
@@ -336,17 +343,35 @@ export class TPSLMonitor {
           ['function coverPayout(address to, uint256 amount)'],
           this.keeperWallet
         );
-        const coverTx = await vaultPool.coverPayout(position.trader, payout, { gasLimit: 600000 });
+        const coverGasLimit = await estimateGasWithBuffer(
+          () => vaultPool.coverPayout.estimateGas(position.trader, payout),
+          600000n,
+          this.logger,
+          'VaultPool.coverPayout'
+        );
+        const coverTx = await vaultPool.coverPayout(position.trader, payout, { gasLimit: coverGasLimit });
         this.logger.info(`coverPayout via VaultPool sent: ${coverTx.hash}`);
         this.logger.warn('Buffer insufficient; paid trader directly from VaultPool. Fees not split via StabilityFund.');
       } else {
+        const settleGasLimit = await estimateGasWithBuffer(
+          () => stabilityFund.settleTrade.estimateGas(
+            position.trader,
+            position.collateral,
+            cappedPnl,
+            tradingFee,
+            this.keeperWallet.address
+          ),
+          600000n,
+          this.logger,
+          'StabilityFund.settleTrade'
+        );
         const settleTx = await stabilityFund.settleTrade(
           position.trader,
           position.collateral,
           cappedPnl,
           tradingFee,
           this.keeperWallet.address,
-          { gasLimit: 600000 }
+          { gasLimit: settleGasLimit }
         );
         this.logger.info(`Settle tx sent: ${settleTx.hash}`);
       }

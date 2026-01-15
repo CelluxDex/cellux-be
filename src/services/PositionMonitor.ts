@@ -7,6 +7,7 @@
 
 import { ethers, Contract } from 'ethers';
 import { Logger } from '../utils/Logger';
+import { estimateGasWithBuffer } from '../utils/Gas';
 import PositionManagerABI from '../abis/PositionManager.json';
 import MarketExecutorABI from '../abis/MarketExecutor.json';
 import RiskManagerABI from '../abis/RiskManager.json';
@@ -311,10 +312,16 @@ export class PositionMonitor {
 
       // Directly call PositionManager.closePosition (requires EXECUTOR_ROLE)
       // This bypasses MarketExecutor's checks and fees, ensuring the position is closed.
+      const gasLimit = await estimateGasWithBuffer(
+        () => this.positionManager.closePosition.estimateGas(position.id, currentPrice),
+        500000n,
+        this.logger,
+        'PositionManager.closePosition'
+      );
       const tx = await this.positionManager.closePosition(
         position.id,
         currentPrice,
-        { gasLimit: 500000 }
+        { gasLimit }
       );
 
       this.logger.info(`📤 Force Close tx sent: ${tx.hash}`);

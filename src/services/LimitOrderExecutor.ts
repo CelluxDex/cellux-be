@@ -10,6 +10,7 @@
 
 import { ethers, Contract } from 'ethers';
 import { Logger } from '../utils/Logger';
+import { estimateGasWithBuffer } from '../utils/Gas';
 import LimitExecutorABI from '../abis/LimitExecutor.json';
 import { GridTradingService } from './GridTradingService';
 import { GridCell, GridCellStatus } from '../types/gridTrading';
@@ -370,24 +371,42 @@ export class LimitOrderExecutor {
       let tx;
       if (order.orderType === 0n) {
         // LIMIT_OPEN
+        const gasLimit = await estimateGasWithBuffer(
+          () => this.limitExecutor.executeLimitOpenOrder.estimateGas(orderId, signedPrice),
+          600000n,
+          this.logger,
+          'LimitExecutor.executeLimitOpenOrder'
+        );
         tx = await this.limitExecutor.executeLimitOpenOrder(
           orderId,
           signedPrice,
-          { gasLimit: 600000 }
+          { gasLimit }
         );
       } else if (order.orderType === 1n) {
         // LIMIT_CLOSE
+        const gasLimit = await estimateGasWithBuffer(
+          () => this.limitExecutor.executeLimitCloseOrder.estimateGas(orderId, signedPrice),
+          500000n,
+          this.logger,
+          'LimitExecutor.executeLimitCloseOrder'
+        );
         tx = await this.limitExecutor.executeLimitCloseOrder(
           orderId,
           signedPrice,
-          { gasLimit: 500000 }
+          { gasLimit }
         );
       } else if (order.orderType === 2n) {
         // STOP_LOSS
+        const gasLimit = await estimateGasWithBuffer(
+          () => this.limitExecutor.executeStopLossOrder.estimateGas(orderId, signedPrice),
+          500000n,
+          this.logger,
+          'LimitExecutor.executeStopLossOrder'
+        );
         tx = await this.limitExecutor.executeStopLossOrder(
           orderId,
           signedPrice,
-          { gasLimit: 500000 }
+          { gasLimit }
         );
       } else {
         throw new Error(`Unknown order type: ${order.orderType}`);
